@@ -55,8 +55,8 @@ def get_password(servertime, nonce, pubkey,pass_word):
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s\t%(levelname)s\t%(message)s")
 
-user_name='18959216747'
-pass_word='hao504137'
+user_name='your_account'
+pass_word='your_password'
 user_uniqueid=None
 user_nick=None
 
