@@ -162,3 +162,7 @@ for page in range(50):
             'date':str(date),
             'content':content,
         })
+        
+with open('out','w',encoding='utf-8') as f:
+    for i in data:
+    f.wirte('uid:%s nick_name:%s person_url:%s date:%s content:%s\n' % (i['uid'],i['nick_name'],i['person_url'],i['date'],i['content']))
