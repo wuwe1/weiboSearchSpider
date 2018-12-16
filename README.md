@@ -7,7 +7,7 @@
 登陆后使用beautiful soup对抓取的页面进行解析
 
 
-##2018/12/16
+## 2018/12/16
 50_recent_pages.py是我最初使用的爬取https://s.weibo.com/weibo?q=%s&nodup=1&page=%d
 这个文件只能爬去某关键字的最新的50页微博（而且我没有解析被转发微博）
 
