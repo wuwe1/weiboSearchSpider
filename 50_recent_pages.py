@@ -8,7 +8,7 @@ import binascii
 import requests
 import urllib.parse
 from bs4 import BeautifulSoup
-from util import date_process
+from util import date_process,forward_process,like_process,comment_process
 
 #########################login
 
@@ -55,8 +55,8 @@ def get_password(servertime, nonce, pubkey,pass_word):
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s\t%(levelname)s\t%(message)s")
 
-user_name='your_account'
-pass_word='your_password'
+user_name='18959216747'
+pass_word='hao504137'
 user_uniqueid=None
 user_nick=None
 
@@ -128,7 +128,7 @@ else:
 
 #########################search
 
-search_key = '基因工程'
+search_key = '转基因'
 
 data=[]
 for page in range(50):
@@ -139,30 +139,73 @@ for page in range(50):
     for feed_list_item in feed_list:
 
         feed_list_content = feed_list_item.find_all(attrs={'node-type':'feed_list_content'})
-        if(len(feed_list_content)==1):
-            nick_name=feed_list_content[0].attrs['nick-name']
-            name=feed_list_item.find_all(attrs={'class':'name'})
-            person_url=name[0].attrs['href']
-            uid = re.match(r'//weibo.com/(\d+)', person_url).groups()[0]
-            content=feed_list_content[0].contents
 
-            classFrom = feed_list_item.find_all(attrs={'class':'from'})
-            if(len(classFrom)==1):
-                date = classFrom[0].a.contents
+        #微博id
+        mid = feed_list_item.attrs['mid']
+
+        #用户uid
+        avator = feed_list_item.find(attrs={'class':'avator'})
+        person_url = avator.a.attrs['href']
+        uid = re.match(r'//weibo.com/(\d+)', person_url).groups()[0]
+
+        #转发数 评论数 点赞数
+        card_act=feed_list_item.find(attrs={'class':'card-act'})
+        feed_list_forward = card_act.find(attrs={'action-type':'feed_list_forward'})
+        feed_list_comment = card_act.find(attrs={'action-type': 'feed_list_comment'})
+        feed_list_like = card_act.find(attrs={'action-type': 'feed_list_like'})
+
+        forward_num = forward_process(feed_list_forward.string)
+        comment_num = comment_process(feed_list_comment.string)
+        like_num = like_process(feed_list_like.em.string)
+
+        #日期
+        From = feed_list_item.find_all(attrs={'class': 'from'})
+        if (len(From) == 1):
+            date = From[0].a.contents
+        else:
+            date = From[len(From) - 1].a.contents
+        date = date_process(date[0])
+
+        #内容
+        content = feed_list_item.find(attrs={'class':'content'})
+        contentFirstP = content.p.contents[0]
+        contentText = ''
+        for i in contentFirstP:
+            if(type(i)==type('str')):
+                contentText = contentText+i
             else:
-                date = classFrom[len(classFrom)-1].a.contents
-            date = date_process(date[0])
-        else:#转发
-            continue
+                contentText = contentText + i.string
 
         data.append({
+            'mid':mid,
             'uid':uid,
-            'nick_name':nick_name,
-            'person_url':person_url,
-            'date':str(date),
-            'content':content,
+            'date':date,
+            'forward_num':forward_num,
+            'comment_num': comment_num,
+            'like_num': like_num,
+            'content':contentText,
         })
-        
-with open('out','w',encoding='utf-8') as f:
-    for i in data:
-    f.wirte('uid:%s nick_name:%s person_url:%s date:%s content:%s\n' % (i['uid'],i['nick_name'],i['person_url'],i['date'],i['content']))
+
+
+
+
+# book = xlwt.Workbook(encoding='utf-8', style_compression=0)
+# sheet = book.add_sheet('50_recent_pages',cell_overwrite_ok=True)
+# sheet.write(0,0,'mid')
+# sheet.write(0,1,'uid')
+# sheet.write(0,2,'date')
+# sheet.write(0,3,'forward_num')
+# sheet.write(0,4,'comment_num')
+# sheet.write(0,5,'like_num')
+# sheet.write(0,6,'content')
+
+# row = 1
+# for i in data:
+#     sheet.write(row,0,i['mid'])
+#     sheet.write(row, 1, i['uid'])
+#     sheet.write(row, 2, i['date'])
+#     sheet.write(row, 3, i['forward_num'])
+#     sheet.write(row, 4, i['comment_num'])
+#     sheet.write(row, 5, i['like_num'])
+#     sheet.write(row, 6, i['content'])
+#     row=row+1
