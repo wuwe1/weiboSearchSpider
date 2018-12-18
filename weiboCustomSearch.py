@@ -8,8 +8,8 @@ import binascii
 import requests
 import urllib.parse
 from bs4 import BeautifulSoup
-from util import date_process,forward_process,like_process,comment_process
-from datetime import datetime,timedelta
+from util import date_process,forward_process,like_process,comment_process,card_comment_process,txts_process
+from datetime import datetime
 
 #########################login
 
@@ -133,8 +133,8 @@ search_key = '转基因'
 
 data=[]
 
-timeS=datetime(2018,12,2,0)
-timeE=datetime(2018,12,2,23)
+timeS=datetime(2018,12,3,0)
+timeE=datetime(2018,12,3,23)
 timeS='{:02d}-{:02d}-{:02d}-{:02d}'.format(timeS.year,timeS.month,timeS.day,timeS.hour)
 timeE='{:02d}-{:02d}-{:02d}-{:02d}'.format(timeE.year,timeE.month,timeE.day,timeE.hour)
 page=1
@@ -183,49 +183,26 @@ while(page<=page_num):
         feed_list_comment = card_act.find(attrs={'action-type': 'feed_list_comment'})
         feed_list_like = card_act.find(attrs={'action-type': 'feed_list_like'})
 
-        forward_num = forward_process(feed_list_forward.string)
-        comment_num = comment_process(feed_list_comment.string)
+        forward_num = forward_process(str(feed_list_forward.string)[3:])
+        comment_num = comment_process(str(feed_list_comment.string)[3:])
         like_num = like_process(feed_list_like.em.string)
 
         # 日期
         From = feed_list_item.find_all(attrs={'class': 'from'})
         if (len(From) == 1):
-            date = From[0].a.contents
+            date = list(From[0].a.stripped_strings)
         else:
-            date = From[len(From) - 1].a.contents
-        date = date_process(date[0])
+            date = list(From[len(From) - 1].a.stripped_strings)
+        date = date_process(date)
 
         #博主说的东西
         feed_list_content = feed_list_item.find(attrs={'class': 'content'})
-        txts = feed_list_content(attrs={'class':'txt'},recursive=False)
-        if(len(txts)==1):
-            #没有展开全文
-            contentText=txts[0]
-        elif(len(txts)==2):
-            #展开全文
-            contentText=txts[1]
-
-        contentText = list(contentText.stripped_strings)
-
-        content=''
-        for text in contentText:
-            content=content+text
-
+        txts = feed_list_content(attrs={'class': 'txt'}, recursive=False)
+        content = txts_process(txts)
 
         #博主转发的东西
         card_comment = feed_list_item.find(attrs={'class':'card-comment'})
-        if(card_comment==None):
-            forwardedContent=''
-        else:
-            if(card_comment.find(attrs={'node-type':'feed_list_content_full'})==None):
-                #没有展开全文
-                forwardedContentText=card_comment.find(attrs={'node-type':'feed_list_content'})
-            else:
-                forwardedContentText = card_comment.find(attrs={'node-type': 'feed_list_content_full'})
-
-                forwardedContent=''
-            for text in list(forwardedContentText.stripped_strings):
-                forwardedContent=forwardedContent+text
+        forwardedContent=card_comment_process(card_comment)
 
 
         data.append({
@@ -240,11 +217,9 @@ while(page<=page_num):
         })
 
 
-# import xlwt
 
 # book = xlwt.Workbook(encoding='utf-8', style_compression=0)
-
-# sheet = book.add_sheet('2018-12-01',cell_overwrite_ok=True)
+# sheet = book.add_sheet('50_recent_pages',cell_overwrite_ok=True)
 # sheet.write(0,0,'mid')
 # sheet.write(0,1,'uid')
 # sheet.write(0,2,'date')
@@ -253,7 +228,7 @@ while(page<=page_num):
 # sheet.write(0,5,'like_num')
 # sheet.write(0,6,'content')
 # sheet.write(0,7,'forwardedContent')
-
+#
 # row = 1
 # for i in data:
 #     sheet.write(row,0,i['mid'])
